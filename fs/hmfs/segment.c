@@ -2,6 +2,7 @@
 #include "segment.h"
 #include "node.h"
 
+
 /*
  * Judge whether an address is a valid address. i.e.
  * it fall into space where we have actually writen data
