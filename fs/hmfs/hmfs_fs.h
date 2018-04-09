@@ -5,8 +5,12 @@
 #include <linux/types.h>
 #include <linux/fs.h>
 #include <uapi/linux/magic.h>
+#include <linux/time.h>
+#include <linux/timekeeping.h>
 
 #define HMFS_SUPER_MAGIC    0xabbf
+#define CURRENT_TIME		(current_kernel_time())
+#define CURRENT_TIME_SEC	((struct timespec) { get_seconds(), 0 })
 
 typedef unsigned long long block_t;	 
 typedef __le32 hmfs_hash_t;
