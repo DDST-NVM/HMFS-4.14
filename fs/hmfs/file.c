@@ -967,7 +967,8 @@ loff_t hmfs_file_llseek(struct file *file, loff_t offset, int whence)
 	const unsigned long long block_size = HMFS_BLOCK_SIZE[seg_type];
 	const unsigned int block_size_bits = HMFS_BLOCK_SIZE_BITS(seg_type);
 
-	mutex_lock(&inode->i_mutex);
+	// mutex_lock(&inode->i_mutex);
+	inode_lock(inode);
 
 	end_blk = (eof + block_size - 1) >> block_size_bits;
 
@@ -1016,7 +1017,8 @@ loff_t hmfs_file_llseek(struct file *file, loff_t offset, int whence)
 
 	ret = vfs_setpos(file, offset, maxsize);
 out:
-	mutex_unlock(&inode->i_mutex);
+	// mutex_unlock(&inode->i_mutex);
+	inode_unlock(inode);
 	return ret;
 }
 
@@ -1479,7 +1481,7 @@ static int hmfs_filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	unsigned long pfn = 0;
 	int err = 0;
 
-	size = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
+	size = (i_size_read(inode) + PAGE_SIZE - 1) >> PAGE_SHIFT;
 	if (offset >= size) {
 		return VM_FAULT_SIGBUS;
 	}
@@ -1623,13 +1625,15 @@ long hmfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 		flags = hmfs_mask_flags(inode->i_mode, flags);
 
-		mutex_lock(&inode->i_mutex);
+		// mutex_lock(&inode->i_mutex);
+		inode_lock(inode);
 
 		oldflags = fi->i_flags;
 
 		if ((flags ^ oldflags) & (FS_APPEND_FL | FS_IMMUTABLE_FL)) {
 			if (!capable(CAP_LINUX_IMMUTABLE)) {
-				mutex_unlock(&inode->i_mutex);
+				// mutex_unlock(&inode->i_mutex);
+				inode_unlock(inode);
 				ret = -EPERM;
 				goto out;
 			}
@@ -1638,7 +1642,8 @@ long hmfs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		flags = flags & FS_FL_USER_MODIFIABLE;
 		flags|= oldflags & ~FS_FL_USER_MODIFIABLE;
 		fi->i_flags = flags;
-		mutex_unlock(&inode->i_mutex);
+		// mutex_unlock(&inode->i_mutex);
+		inode_unlock(inode);
 		hmfs_set_inode_flags(inode);
 		inode->i_ctime = CURRENT_TIME;
 		mark_inode_dirty(inode);
