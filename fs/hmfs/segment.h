@@ -2,7 +2,7 @@
 #define HMFS_SEGMENT_H
 
 #include "hmfs.h"
-#include <linux/time.h>
+#include <linux/timekeeping.h>
 
 #define SIT_ENTRY_CLEAN			0
 #define SIT_ENTRY_DIRTY				1
@@ -284,8 +284,8 @@ static inline bool has_not_enough_free_segs(struct hmfs_sb_info *sbi)
 static inline unsigned long long get_mtime(struct hmfs_sb_info *sbi)
 {
 	struct sit_info *sit_i = SIT_I(sbi);
-    struct timeval ct;
-	return sit_i->elapsed_time + ct.tv_sec -
+//    struct timeval ct;
+	return sit_i->elapsed_time + current_kernel_time().tv_sec -
 	 sit_i->mounted_time;
 }
 

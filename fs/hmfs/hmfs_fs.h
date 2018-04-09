@@ -4,9 +4,13 @@
 #include <linux/pagemap.h>
 #include <linux/types.h>
 #include <linux/fs.h>
+#include <uapi/linux/magic.h>
+
+#define HMFS_SUPER_MAGIC    0xabbf
 
 typedef unsigned long long block_t;	 
 typedef __le32 hmfs_hash_t;
+
 
 /* file types used in inode_info->flags */
 enum FILE_TYPE {
