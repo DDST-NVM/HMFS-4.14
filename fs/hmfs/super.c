@@ -14,7 +14,7 @@
 #include "node.h"
 #include "util.h"
 
-static struct kmem_cache *hmfs_inode_cachep_;	//inode cachep
+static struct kmem_cache *hmfs_inode_cachep;	//inode cachep
 
 static void init_once(void *foo)
 {
