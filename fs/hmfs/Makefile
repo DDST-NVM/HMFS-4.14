@@ -1,3 +1,5 @@
+CONFIG_MODULE_SIG=n
+
 ccflags-y += -DCONFIG_HMFS_DEBUG
 #ccflags-y += -DCONFIG_HMFS_DEBUG_GC
 ccflags-y += -DCONFIG_HMFS_XATTR
