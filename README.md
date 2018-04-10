@@ -13,7 +13,7 @@ The integration procedure falls into three steps:
    - Test complicated commands and dataset.
 3. Run **demo** codes on AEP machine. [ToBeDone]
    - Certify the application and explanation; (e.g., filebench? Redis?)
-   - Run applications successfully/
+   - Run applications successfully.
 
 ## NOTICE
 
