@@ -7,6 +7,7 @@
 #include <uapi/linux/magic.h>
 #include <linux/time.h>
 #include <linux/timekeeping.h>
+// SPDX-License-Identifier: GPL-2.0
 
 #define HMFS_SUPER_MAGIC    0xabbf
 #define CURRENT_TIME		(current_kernel_time())
@@ -14,7 +15,6 @@
 
 typedef unsigned long long block_t;	 
 typedef __le32 hmfs_hash_t;
-
 
 /* file types used in inode_info->flags */
 enum FILE_TYPE {
