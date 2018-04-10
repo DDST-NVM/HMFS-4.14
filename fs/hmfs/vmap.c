@@ -20,10 +20,11 @@ static struct mm_struct *imm;
 
 static pte_t *hmfs_pte_alloc_one_kernel(struct mm_struct *mm, unsigned long addr)
 {
-	return (pte_t *)__get_free_page((GFP_KERNEL | __GFP_NOTRACK | __GFP_REPEAT | __GFP_ZERO));
+	//return (pte_t *)__get_free_page((GFP_KERNEL | __GFP_NOTRACK | __GFP_REPEAT | __GFP_ZERO));
+	return (pte_t *)__get_free_page((GFP_KERNEL | __GFP_NOTRACK | __GFP_RETRY_MAYFAIL | __GFP_ZERO));
 }
 
-static int __hmfs_pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long address)
+static int __hmfs_pud_alloc(struct mm_struct *mm, p4d_t *p4d, unsigned long address)
 {
 	pud_t *new = pud_alloc_one(mm, address);
 	if (!new)
@@ -32,19 +33,19 @@ static int __hmfs_pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long addr
 	smp_wmb(); /* See comment in __pte_alloc */
 
 	spin_lock(&mm->page_table_lock);
-	if (pgd_present(*pgd))		/* Another has populated it */
+	if (p4d_present(*p4d))		/* Another has populated it */
 		pud_free(mm, new);
 	else
-		pgd_populate(mm, pgd, new);
+		p4d_populate(mm, p4d, new);
 	spin_unlock(&mm->page_table_lock);
 	return 0;
 
 }
 
-static pud_t *hmfs_pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long addr)
+static pud_t *hmfs_pud_alloc(struct mm_struct *mm, p4d_t *p4d, unsigned long addr)
 {
-	return (unlikely(pgd_none(*pgd)) && __hmfs_pud_alloc(mm, pgd, addr))?
-					NULL: pud_offset(pgd, addr);
+	return (unlikely(p4d_none(*p4d)) && __hmfs_pud_alloc(mm, p4d, addr))?
+					NULL: pud_offset(p4d, addr);
 }
 
 static int __hmfs_pmd_alloc(struct mm_struct *mm, pud_t *pud, unsigned long address)
@@ -86,8 +87,8 @@ static pte_t *hmfs_pte_alloc(struct mm_struct *mm, pmd_t *pmd, unsigned long add
 	if (likely(pmd_none(*pmd))) {	/* Has another populated it ? */
 		pmd_populate_kernel(mm, pmd, new);
 		new = NULL;
-	} else
-		VM_BUG_ON(pmd_trans_splitting(*pmd));
+	} // else
+		// VM_BUG_ON(pmd_trans_splitting(*pmd));
 	spin_unlock(&mm->page_table_lock);
 	if (new)
 		pte_free_kernel(mm, new);
@@ -132,13 +133,13 @@ static int map_pmd_range(struct mm_struct *mm, pud_t *pud, unsigned long addr,
 	return 0;
 }
 
-static int map_pud_range(struct mm_struct *mm, pgd_t *pgd, unsigned long addr,
+static int map_pud_range(struct mm_struct *mm, p4d_t *p4d, unsigned long addr,
 				unsigned long end, uint64_t *pfns, const uint8_t seg_type, int *i)
 {
 	pud_t *pud = NULL;
 	unsigned long next;
 
-	pud = hmfs_pud_alloc(mm, pgd, addr);
+	pud = hmfs_pud_alloc(mm, p4d, addr);
 	if (!pud)
 		return -ENOMEM;
 	do {
@@ -159,6 +160,7 @@ int remap_data_blocks_for_write(struct inode *inode, unsigned long st_addr,
 	unsigned long ed_addr = st_addr + ((end - start) << HMFS_BLOCK_SIZE_BITS(seg_type));
 	void *data_block;
 	pgd_t *pgd = pgd_offset(mm, st_addr);
+	p4d_t *p4d = p4d_offset(pgd, st_addr);
 	unsigned long next, addr = st_addr;
 	uint64_t buf[8];
 	uint64_t *pfns = buf;
@@ -175,10 +177,10 @@ int remap_data_blocks_for_write(struct inode *inode, unsigned long st_addr,
 
 	flush_cache_vmap(st_addr, ed_addr);
 	do {
-		next = pgd_addr_end(addr, ed_addr);
-		if (map_pud_range(mm, pgd, addr, next, pfns, seg_type, &i))
+		next = p4d_addr_end(addr, ed_addr);
+		if (map_pud_range(mm, p4d, addr, next, pfns, seg_type, &i))
 			return -ENOMEM;
-	} while (pgd++, addr = next, addr != ed_addr);
+	} while (p4d++, addr = next, addr != ed_addr);
 
 	//FIXME: need flush tlb?
 	//flush_tlb_kernel_range(st_addr, ed_addr);
@@ -289,7 +291,8 @@ pte_t *hmfsp_pte_alloc_one_kernel(struct mm_struct *mm, unsigned long address)
 {
 	pte_t *pte;
 
-	pte = (pte_t *)__get_free_page(GFP_KERNEL|__GFP_REPEAT|__GFP_ZERO);
+	// pte = (pte_t *)__get_free_page(GFP_KERNEL|__GFP_REPEAT|__GFP_ZERO);
+	pte = (pte_t *)__get_free_page(GFP_KERNEL|__GFP_RETRY_MAYFAIL|__GFP_ZERO);
 	return pte;
 }
 
@@ -305,8 +308,8 @@ int _hmfsp__pte_alloc_kernel(pmd_t *pmd, unsigned long address)
 	if (likely(pmd_none(*pmd))) {	/* Has another populated it ? */
 		pmd_populate_kernel(imm, pmd, new);
 		new = NULL;
-	} else
-		VM_BUG_ON(pmd_trans_splitting(*pmd));
+	} // else
+	//	VM_BUG_ON(pmd_trans_splitting(*pmd));
 	spin_unlock(&(imm->page_table_lock));
 	if (new)
 		pte_free_kernel(imm, new);
@@ -388,7 +391,7 @@ int pvmap_pmd_range(pud_t *pud, unsigned long addr,
 	return 0;
 }
 
-int _hmfsp__pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long address)
+int _hmfsp__pud_alloc(struct mm_struct *mm, p4d_t *p4d, unsigned long address)
 {
 	pud_t *new = pud_alloc_one(mm, address);
 	if (!new)
@@ -397,27 +400,27 @@ int _hmfsp__pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long address)
 	smp_wmb(); /* See comment in __pte_alloc */
 
 	spin_lock(&mm->page_table_lock);
-	if (pgd_present(*pgd))		/* Another has populated it */
+	if (p4d_present(*p4d))		/* Another has populated it */
 		pud_free(mm, new);
 	else
-		pgd_populate(mm, pgd, new);
+		p4d_populate(mm, p4d, new);
 	spin_unlock(&mm->page_table_lock);
 	return 0;
 }
 
-static inline pud_t *hmfsp_pud_alloc(struct mm_struct *mm, pgd_t *pgd, unsigned long address)
+static inline pud_t *hmfsp_pud_alloc(struct mm_struct *mm, p4d_t *p4d, unsigned long address)
 {
-	return (unlikely(pgd_none(*pgd)) && _hmfsp__pud_alloc(mm, pgd, address))?
-		NULL: pud_offset(pgd, address);
+	return (unlikely(p4d_none(*p4d)) && _hmfsp__pud_alloc(mm, p4d, address))?
+		NULL: pud_offset(p4d, address);
 }
 
-int pvmap_pud_range(pgd_t *pgd, unsigned long addr,
+int pvmap_pud_range(p4d_t *p4d, unsigned long addr,
 		unsigned long end, pgprot_t prot, struct page **pages, int *nr)
 {
 	pud_t *pud;
 	unsigned long next;
 
-	pud = hmfsp_pud_alloc(imm, pgd, addr);
+	pud = hmfsp_pud_alloc(imm, p4d, addr);
 	if (!pud)
 		return -ENOMEM;
 	do {
@@ -438,6 +441,7 @@ int pvmap_page_range_noflush(unsigned long start, unsigned long end,
 				   pgprot_t prot, struct page **pages)
 {
 	pgd_t *pgd;
+	p4d_t *p4d;
 	unsigned long next;
 	unsigned long addr = start;
 	int err = 0;
@@ -445,13 +449,14 @@ int pvmap_page_range_noflush(unsigned long start, unsigned long end,
 
 	BUG_ON(addr >= end);
 	pgd = pgd_offset(imm, addr);
+	p4d = p4d_offset(pgd, addr);
 	// pgd = pgd_offset_k(addr);
 	do {
-		next = pgd_addr_end(addr, end);
-		err = pvmap_pud_range(pgd, addr, next, prot, pages, &nr);
+		next = p4d_addr_end(addr, end);
+		err = pvmap_pud_range(p4d, addr, next, prot, pages, &nr);
 		if (err)
 			return err;
-	} while (pgd++, addr = next, addr != end);
+	} while (p4d++, addr = next, addr != end);
 
 	return nr;
 }

@@ -437,36 +437,24 @@ int hmfs_init_acl(struct inode *inode, struct inode *dir)
 	return error;
 }
 
-size_t hmfs_acl_access_xattr_list(struct dentry *dentry, char *list, 
-				size_t list_size, const char *name, size_t name_len, 
-				int type)
+bool hmfs_acl_access_xattr_list(struct dentry *dentry)
 {
-	const size_t size = sizeof(POSIX_ACL_XATTR_ACCESS);
+	// const size_t size = sizeof(POSIX_ACL_XATTR_ACCESS);
 	struct hmfs_sb_info *sbi = HMFS_SB(dentry->d_sb);
 	
-	if (!test_opt(sbi, POSIX_ACL))
-		return 0;
-	if (list && size <= list_size)
-		memcpy(list, POSIX_ACL_XATTR_ACCESS, size);
-	return size;
+	return test_opt(sbi, POSIX_ACL);
 }
 
-size_t hmfs_acl_default_xattr_list(struct dentry *dentry, char *list,
-				size_t list_size, const char *name, size_t name_len,
-				int type)
+bool hmfs_acl_default_xattr_list(struct dentry *dentry)
 {
-	const size_t size = sizeof(POSIX_ACL_XATTR_DEFAULT);
+	// const size_t size = sizeof(POSIX_ACL_XATTR_DEFAULT);
 	struct hmfs_sb_info *sbi = HMFS_SB(dentry->d_sb);
 
-	if (!test_opt(sbi, POSIX_ACL))
-		return 0;
-	if (list && size <= list_size)
-		memcpy(list, POSIX_ACL_XATTR_DEFAULT, size);
-	return size;
+	return test_opt(sbi, POSIX_ACL);
 }
 
-int hmfs_acl_xattr_get(struct dentry *dentry, const char *name, void *buffer,
-				size_t size, int type)
+/*
+int hmfs_acl_xattr_get(const struct xattr_handler * handler, struct dentry *dentry, struct inode * inode, const char *name, void *buffer, size_t size)
 {
 	struct posix_acl *acl;
 	int error;
@@ -478,7 +466,7 @@ int hmfs_acl_xattr_get(struct dentry *dentry, const char *name, void *buffer,
 		return -EOPNOTSUPP;
 
 	inode_read_lock(dentry->d_inode);
-	acl = hmfs_get_acl(dentry->d_inode, type);
+	acl = hmfs_get_acl(dentry->d_inode, handler->type);
 	inode_read_unlock(dentry->d_inode);
 	if (IS_ERR(acl))
 		return PTR_ERR(acl);
@@ -491,10 +479,9 @@ int hmfs_acl_xattr_get(struct dentry *dentry, const char *name, void *buffer,
 	return error;
 }
 
-static int hmfs_acl_xattr_set(struct dentry *dentry, const char *name,
-				const void *value, size_t size, int flags, int type)
+static int hmfs_acl_xattr_set(const struct xattr_handler * handler, struct dentry *dentry, struct inode *inode, const char *name, const void * buffer, size_t size, int flags)
 {
-	struct inode *inode = dentry->d_inode;
+	// struct inode *inode = dentry->d_inode;
 	struct posix_acl *acl;
 	int error = 0, ilock;
 	struct hmfs_sb_info *sbi = HMFS_SB(dentry->d_sb);
@@ -520,28 +507,27 @@ static int hmfs_acl_xattr_set(struct dentry *dentry, const char *name,
 
 	ilock = mutex_lock_op(sbi);
 	inode_write_lock(inode);
-	error = hmfs_set_acl(inode, acl, type);
+	error = hmfs_set_acl(inode, acl, handler->type);
 	inode_write_unlock(inode);
 	mutex_unlock_op(sbi, ilock);
 
 release_and_out:
 	posix_acl_release(acl);
 	return error;
-}
-
+} */
 
 const struct xattr_handler hmfs_acl_access_handler = {
-	.prefix = POSIX_ACL_XATTR_ACCESS,
+	// .prefix = POSIX_ACL_XATTR_ACCESS,
 	.flags = ACL_TYPE_ACCESS,
 	.list = hmfs_acl_access_xattr_list,
-	.get = hmfs_acl_xattr_get,
-	.set = hmfs_acl_xattr_set,
+	//.get = hmfs_acl_xattr_get,
+	//.set = hmfs_acl_xattr_set,
 };
 
 const struct xattr_handler hmfs_acl_default_handler = {
-	.prefix = POSIX_ACL_XATTR_DEFAULT,
+	// .prefix = POSIX_ACL_XATTR_DEFAULT,
 	.flags = ACL_TYPE_DEFAULT,
 	.list = hmfs_acl_default_xattr_list,
-	.get = hmfs_acl_xattr_get,
-	.set = hmfs_acl_xattr_set,
+	//.get = hmfs_acl_xattr_get,
+	//.set = hmfs_acl_xattr_set,
 };

@@ -645,8 +645,7 @@ static int hmfs_print_sit(struct hmfs_sb_info *sbi, int args, char argv[][MAX_AR
 	}
 
 
-	len += hmfs_print(STAT_I(sbi), 1, "total dirty segments = %lu, total valid blocks = %lu, disk usage = %f %% \n",\
-		 nr_dirty_segs, nr_valid_blocks, (double)nr_valid_blocks / (nr_dirty_segs << 9) * 100);
+	len += hmfs_print(STAT_I(sbi), 1, "total dirty segments = %lu, total valid blocks = %lu, disk usage = %f %% \n", nr_dirty_segs, nr_valid_blocks, nr_valid_blocks * 100 / (nr_dirty_segs << 9));
 	if (segno == TOTAL_SEGS(sbi)){
 		len = hmfs_print(STAT_I(sbi), 1, "no error found in SIT check!\n");
 	}

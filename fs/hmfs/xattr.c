@@ -146,12 +146,12 @@ int hmfs_getxattr(struct inode *inode, int index, const char *name,
 	return ret;
 }
 
-static int hmfs_xattr_generic_get(struct dentry *dentry, const char *name,
-				void *buffer, size_t size, int flags)
+static int hmfs_xattr_generic_get(const struct xattr_handler *handler, struct dentry *dentry, struct inode* inode, const char *name,
+				void *buffer, size_t size)
 {
 	struct hmfs_sb_info *sbi = HMFS_SB(dentry->d_sb);
 
-	switch (flags) {
+	switch (handler->flags) {
 	case HMFS_XATTR_INDEX_USER:
 		if (!test_opt(sbi, XATTR_USER))
 			return -EOPNOTSUPP;
@@ -167,7 +167,7 @@ static int hmfs_xattr_generic_get(struct dentry *dentry, const char *name,
 	}
 	if (strcmp(name, "") == 0)
 		return -EINVAL;
-	return hmfs_getxattr(dentry->d_inode, flags, name,
+	return hmfs_getxattr(dentry->d_inode, handler->flags, name,
 					buffer, size);
 }
 
@@ -301,12 +301,12 @@ static int hmfs_setxattr(struct inode *inode, int index, const char *name,
 	return err;
 }
 
-static int hmfs_xattr_generic_set(struct dentry *dentry, const char *name,
-				const void *value, size_t size, int flags, int handler_flags)
+static int hmfs_xattr_generic_set(const struct xattr_handler *handler, struct dentry *dentry, struct inode *inode, const char *name,
+				const void *value, size_t size, int flags)
 {
 	struct hmfs_sb_info *sbi = HMFS_SB(dentry->d_sb);
 
-	switch (handler_flags) {
+	switch (handler->flags) {
 	case HMFS_XATTR_INDEX_USER:
 		if (!test_opt(sbi, XATTR_USER))
 			return -EOPNOTSUPP;
@@ -322,7 +322,7 @@ static int hmfs_xattr_generic_set(struct dentry *dentry, const char *name,
 	}
 	if (strcmp(name, "") == 0)
 		return -EINVAL;
-	return hmfs_setxattr(dentry->d_inode, handler_flags, name,
+	return hmfs_setxattr(dentry->d_inode, handler->flags, name,
 					value, size, flags);
 }
 
@@ -338,25 +338,25 @@ static size_t hmfs_xattr_advise_list(struct dentry *dentry, char *list,
 	return size;
 }
 
-static int hmfs_xattr_advise_get(struct dentry *dentry, const char *name,
-				void *buffer, size_t size, int flags)
+static int hmfs_xattr_advise_get(const struct xattr_handler *handler, struct dentry *dentry, struct inode *inode, const char *name,
+				void *buffer, size_t size)
 {
-	struct inode *inode = dentry->d_inode;
+	// struct inode *inode = dentry->d_inode;
 
 	if (strcmp(name ,"") != 0)
 		return -EINVAL;
 
-	inode_read_lock(inode);
+	inode_read_lock(dentry->d_inode);
 	if (buffer)
-		*((char *)buffer) = HMFS_I(inode)->i_advise;
-	inode_read_unlock(inode);
+		*((char *)buffer) = HMFS_I(dentry->d_inode)->i_advise;
+	inode_read_unlock(dentry->d_inode);
 	return sizeof(char);
 }
 
-static int hmfs_xattr_advise_set(struct dentry *dentry, const char *name,
-				const void *value, size_t size, int flags, int handler_flag)
+static int hmfs_xattr_advise_set(const struct xattr_handler *handler, struct dentry *dentry, struct inode * inode, const char *name,
+			const void *value, size_t size, int flags)
 {
-	struct inode *inode = dentry->d_inode;
+	// struct inode *inode = dentry->d_inode;
 
 	if (strcmp(name, "") != 0)
 		return -EINVAL;
@@ -365,11 +365,11 @@ static int hmfs_xattr_advise_set(struct dentry *dentry, const char *name,
 	if (value == NULL)
 		return -EINVAL;
 
-	inode_write_lock(inode);
-	HMFS_I(inode)->i_advise = *(char *)value;
+	inode_write_lock(dentry->d_inode);
+	HMFS_I(dentry->d_inode)->i_advise = *(char *)value;
 	inode->i_ctime = CURRENT_TIME;
-	inode_write_unlock(inode);
-	mark_inode_dirty(inode);
+	inode_write_unlock(dentry->d_inode);
+	mark_inode_dirty(dentry->d_inode);
 	return 0;
 }
 
@@ -398,7 +398,7 @@ int hmfs_init_security(struct inode *inode ,struct inode *dir,
 const struct xattr_handler hmfs_xattr_trusted_handler = {
 	.prefix = XATTR_TRUSTED_PREFIX,
 	.flags = HMFS_XATTR_INDEX_TRUSTED,
-	.list = hmfs_xattr_generic_list,
+	//.list = hmfs_xattr_generic_list,
 	.get = hmfs_xattr_generic_get,
 	.set = hmfs_xattr_generic_set,
 };
@@ -406,7 +406,7 @@ const struct xattr_handler hmfs_xattr_trusted_handler = {
 const struct xattr_handler hmfs_xattr_advise_handler = {
 	.prefix = HMFS_SYSTEM_ADVISE_PREFIX,
 	.flags = HMFS_XATTR_INDEX_ADVISE,
-	.list = hmfs_xattr_advise_list,
+	//.list = hmfs_xattr_advise_list,
 	.get = hmfs_xattr_advise_get,
 	.set = hmfs_xattr_advise_set,
 };
@@ -414,7 +414,7 @@ const struct xattr_handler hmfs_xattr_advise_handler = {
 const struct xattr_handler hmfs_xattr_security_handler = {
 	.prefix = XATTR_SECURITY_PREFIX,
 	.flags = HMFS_XATTR_INDEX_SECURITY,
-	.list = hmfs_xattr_generic_list,
+	//.list = hmfs_xattr_generic_list,
 	.get = hmfs_xattr_generic_get,
 	.set = hmfs_xattr_generic_set,
 };
@@ -422,7 +422,7 @@ const struct xattr_handler hmfs_xattr_security_handler = {
 const struct xattr_handler hmfs_xattr_user_handler = {
 	.prefix = XATTR_USER_PREFIX,
 	.flags = HMFS_XATTR_INDEX_USER,
-	.list = hmfs_xattr_generic_list,
+	//.list = hmfs_xattr_generic_list,
 	.get = hmfs_xattr_generic_get,
 	.set = hmfs_xattr_generic_set,
 };
@@ -458,6 +458,7 @@ static inline const struct xattr_handler *hmfs_xattr_handler(int index)
 
 ssize_t hmfs_listxattr(struct dentry *dentry, char *buffer, size_t buffer_size)
 {
+	/*
 	struct inode *inode =dentry->d_inode;
 	struct hmfs_xattr_entry *entry;
 	void *xattr_block;
@@ -489,5 +490,6 @@ ssize_t hmfs_listxattr(struct dentry *dentry, char *buffer, size_t buffer_size)
 	}
 	error = buffer_size - rest;
 out:
-	return error;
+	return error;*/
+	return 0;
 }

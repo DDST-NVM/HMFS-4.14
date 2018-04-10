@@ -140,8 +140,9 @@ static int hmfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
 {
 	struct inode *inode;
 
-	if (!new_valid_dev(rdev))
-		return -EINVAL;
+	// new_valid_dev always return 1 in 3.11
+	// if (!new_valid_dev(rdev))
+	//	return -EINVAL;
 
 	inode = hmfs_make_dentry(dir, dentry, mode);
 	if (IS_ERR(inode))
@@ -265,7 +266,7 @@ static int hmfs_rmdir(struct inode *dir, struct dentry *dentry)
 }
 
 static int hmfs_rename(struct inode *old_dir, struct dentry *old_dentry,
-		       struct inode *new_dir, struct dentry *new_dentry)
+		       struct inode *new_dir, struct dentry *new_dentry, unsigned int flags)
 {
 	struct super_block *sb = old_dir->i_sb;
 	struct hmfs_sb_info *sbi = HMFS_SB(sb);
@@ -366,9 +367,12 @@ out:
 	return err;
 }
 
-int hmfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
-		 struct kstat *stat)
+// int hmfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
+// 		 struct kstat *stat)
+int hmfs_getattr(const struct path *path, struct kstat *stat,
+		u32 request_mask, unsigned int flags)
 {
+	struct dentry *dentry = path->dentry;
 	struct inode *inode = dentry->d_inode;
 	generic_fillattr(inode, stat);
 	stat->blocks <<= 3;
@@ -409,7 +413,8 @@ int hmfs_setattr(struct dentry *dentry, struct iattr *attr)
 	int err = 0, ilock;
 	struct hmfs_sb_info *sbi = HMFS_I_SB(inode);
 
-	err = inode_change_ok(inode, attr);
+	// err = inode_change_ok(inode, attr);
+	err = setattr_prepare(dentry, attr);
 	if (err)
 		return err;
 
@@ -427,7 +432,8 @@ int hmfs_setattr(struct dentry *dentry, struct iattr *attr)
 	if (attr->ia_valid & ATTR_MODE) {
 		acl = hmfs_get_acl(inode, ACL_TYPE_ACCESS);
 		if (acl && !IS_ERR(acl)) {
-			err = posix_acl_chmod(&acl, GFP_KERNEL, fi->i_acl_mode);
+			// err = posix_acl_chmod(&acl, GFP_KERNEL, fi->i_acl_mode);
+			err = posix_acl_chmod(inode, fi->i_acl_mode);
 			if (!err)
 				err = hmfs_set_acl(inode, acl, ACL_TYPE_ACCESS);
 		}
@@ -478,10 +484,10 @@ const struct inode_operations hmfs_dir_inode_operations = {
 	.rename = hmfs_rename,
 	.get_acl = hmfs_get_acl,
 #ifdef CONFIG_HMFS_XATTR
-	.setxattr = generic_setxattr,
-	.getxattr = generic_getxattr,
+	//.setxattr = generic_setxattr,
+	//.getxattr = generic_getxattr,
 	.listxattr = hmfs_listxattr,
-	.removexattr = generic_removexattr,
+	//.removexattr = generic_removexattr,
 #endif
 };
 
@@ -490,9 +496,9 @@ const struct inode_operations hmfs_special_inode_operations = {
 	.setattr = hmfs_setattr,
 	.get_acl = hmfs_get_acl,
 #ifdef CONFIG_HMFS_XATTR
-	.setxattr = generic_setxattr,
-	.getxattr = generic_getxattr,
+	//.setxattr = generic_setxattr,
+	//.getxattr = generic_getxattr,
 	.listxattr = hmfs_listxattr,
-	.removexattr = generic_removexattr,
+	//.removexattr = generic_removexattr,
 #endif
 };

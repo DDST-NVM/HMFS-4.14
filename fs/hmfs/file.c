@@ -793,7 +793,7 @@ static ssize_t __hmfs_xip_file_write(struct inode *inode, const char __user *buf
 			status = PTR_ERR(inode_block);
 			goto out;
 		}
-		written = count - __copy_from_user_nocache((__u8 *)inode_block->inline_content 
+		written = count - __copy_from_user_inatomic_nocache((__u8 *)inode_block->inline_content 
 								+ pos, buf, count);
 		if (unlikely(written != count)) {
 			status = -EFAULT;
@@ -842,7 +842,7 @@ normal_write:
 
 		/* To avoid deadlock between fi->i_lock and mm->mmap_sem in mmap */
 		inode_write_unlock(inode);
-		copied = bytes - __copy_from_user_nocache(xip_mem + offset,	buf, bytes);
+		copied = bytes - __copy_from_user_inatomic_nocache(xip_mem + offset,	buf, bytes);
 		// if (index>460 && index<470)hmfs_dbg("index:%ld offset:%ld buf:%p\n",index,offset,xip_mem + offset);
 		// if (index>972 && index<982)hmfs_dbg("index:%ld offset:%ld buf:%p\n",index,offset,xip_mem + offset);
 		inode_write_lock(inode);
@@ -938,7 +938,7 @@ next_8:
 		rw_addr += 8 << PAGE_SHIFT;
 	}
 
-	copied = len - __copy_from_user_nocache(fi->rw_addr + *ppos, buf, len);
+	copied = len - __copy_from_user_inatomic_nocache(fi->rw_addr + *ppos, buf, len);
 	*ppos += copied;
 	
 	if (*ppos > inode->i_size)
@@ -1024,7 +1024,7 @@ out:
 
 ssize_t hmfs_xip_file_write(struct file *filp, const char __user *buf, size_t len, loff_t *ppos)
 {
-	struct address_space *mapping = filp->f_mapping;
+	// struct address_space *mapping = filp->f_mapping;
 	struct inode *inode = filp->f_inode;
 	struct hmfs_sb_info *sbi = HMFS_I_SB(inode);
 	size_t count = 0, ret;
@@ -1043,17 +1043,19 @@ ssize_t hmfs_xip_file_write(struct file *filp, const char __user *buf, size_t le
 	pos = *ppos;
 	count = len;
 
-	current->backing_dev_info = mapping->backing_dev_info;
+	// current->backing_dev_info = mapping->backing_dev_info;
 
-	ret = generic_write_checks(filp, &pos, &count, S_ISBLK(inode->i_mode));
+	// ret = generic_write_checks(filp, &pos, &count, S_ISBLK(inode->i_mode));
 
-	if (ret)
+	// if (ret)
+	//	goto out_backing;
+
+	if (count == 0) {
+		ret = 0;
 		goto out_backing;
+	}
 
-	if (count == 0)
-		goto out_backing;
-
-	ret = file_remove_suid(filp);
+	ret = file_remove_privs(filp);
 	if (ret)
 		goto out_backing;
 	// Duplicate with the later two lines of code
@@ -1472,8 +1474,10 @@ free:
 	return 0;
 }
 
-static int hmfs_filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+// static int hmfs_filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+static int hmfs_filemap_fault(struct vm_fault *vmf)
 {
+	struct vm_area_struct * vma = vmf->vma;
 	struct address_space *mapping = vma->vm_file->f_mapping;
 	struct inode *inode = mapping->host;
 	// struct hmfs_sb_info *sbi = HMFS_I_SB(inode);
@@ -1499,7 +1503,7 @@ static int hmfs_filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	if (err)
 		return VM_FAULT_SIGBUS;
 */
-	err = vm_insert_mixed(vma, (unsigned long)vmf->virtual_address, pfn);
+	err = vm_insert_mixed(vma, (unsigned long)vmf->address, pfn_to_pfn_t(pfn));
 
 	if (err == -ENOMEM) {
 		return VM_FAULT_SIGBUS;
@@ -1698,11 +1702,13 @@ const struct file_operations hmfs_file_operations = {
 const struct inode_operations hmfs_file_inode_operations = {
 	.getattr = hmfs_getattr,
 	.setattr = hmfs_setattr,
+	.get_acl = hmfs_get_acl,
+	.set_acl = hmfs_set_acl,
 #ifdef CONFIG_HMFS_XATTR
-	.setxattr = generic_setxattr,
-	.getxattr = generic_getxattr,
+	//.setxattr = generic_setxattr,
+	//.getxattr = generic_getxattr,
 	.listxattr = hmfs_listxattr,
-	.removexattr = generic_removexattr,
+	//.removexattr = generic_removexattr,
 #endif 
 };
 

@@ -84,13 +84,13 @@ static block_t mk_root(struct hmfs_sb_info *sbi, block_t *nofs, block_t *dofs)
 	hi->i_mode = cpu_to_le16(0x41ed);
 	hi->i_links = cpu_to_le32(2);
 
-#ifdef CONFIG_UIDGID_STRICT_TYPE_CHECKS
+// #ifdef CONFIG_UIDGID_STRICT_TYPE_CHECKS
 	hi->i_uid = cpu_to_le32(sbi->uid.val);
 	hi->i_gid = cpu_to_le32(sbi->gid.val);
-#else
-	hi->i_uid = cpu_to_le32(sbi->uid);
-	hi->i_gid = cpu_to_le32(sbi->gid);
-#endif
+// #else
+	// hi->i_uid = cpu_to_le32(sbi->uid);
+	// hi->i_gid = cpu_to_le32(sbi->gid);
+// #endif
 
 	hi->i_size = cpu_to_le64(HMFS_BLOCK_SIZE[SEG_DATA_INDEX] * 1);
 	hi->i_blocks = cpu_to_le64(2);

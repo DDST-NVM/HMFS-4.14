@@ -12,6 +12,7 @@
 #include <linux/radix-tree.h>
 #include <linux/vmalloc.h>
 #include <linux/rbtree.h>
+#include <linux/pfn_t.h>
 #include "hmfs_fs.h"
 
 #define HMFS_DEF_FILE_MODE	0664
@@ -1168,7 +1169,8 @@ int hmfs_symlink(struct inode *inode, struct dentry *, const char *symname);
 hmfs_hash_t hmfs_dentry_hash(const struct qstr *name_info);
 
 /* namei.c */
-int hmfs_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat);
+// int hmfs_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat);
+int hmfs_getattr(const struct path *path, struct kstat *stat, u32, unsigned int flags);
 int hmfs_setattr(struct dentry *dentry, struct iattr *attr);
 struct inode *hmfs_make_dentry(struct inode *dir, struct dentry *dentry, umode_t mode);
 
@@ -1227,12 +1229,15 @@ int init_util_function(void);
 #ifdef CONFIG_HMFS_ACL
 struct posix_acl *hmfs_get_acl(struct inode *inode, int type);
 int hmfs_init_acl(struct inode *inode, struct inode *dir);
-int hmfs_acl_xattr_get(struct dentry *, const char *name, void *buffer,
-				size_t list_size, int);
-size_t hmfs_acl_access_xattr_list(struct dentry *, char *,
-				size_t, const char *, size_t, int);
-size_t hmfs_acl_default_xattr_list(struct dentry *, char *,
-				size_t, const char *, size_t, int);
+// int hmfs_acl_xattr_get(struct dentry *, const char *name, void *buffer,
+//				size_t list_size, int);
+int hmfs_acl_xattr_get(const struct xattr_handler *, struct dentry *, struct inode * inode, const char *name, void *buffer, size_t list_size);
+// size_t hmfs_acl_access_xattr_list(struct dentry *, char *,
+// 				size_t, const char *, size_t, int);
+bool hmfs_acl_access_xattr_list(struct dentry *);
+// size_t hmfs_acl_default_xattr_list(struct dentry *, char *,
+//				size_t, const char *, size_t, int);
+bool hmfs_acl_default_xattr_list(struct dentry *);
 int hmfs_set_acl(struct inode *inode, struct posix_acl *acl, int type);
 #else
 #define hmfs_get_acl(inode, type) 	NULL

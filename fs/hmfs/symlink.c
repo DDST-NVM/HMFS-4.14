@@ -33,6 +33,21 @@ int hmfs_symlink(struct inode *dir, struct dentry *dentry, const char *symname)
 	return 0;
 }
 
+static int hmfs_readlink_copy(char __user * buffer, int buflen, const char * link) {
+	int len = PTR_ERR(link);
+	if (IS_ERR(link))
+		goto out;
+
+	len = strlen(link);
+	if (len > (unsigned) buflen)
+		len = buflen;
+	if (copy_to_user(buffer, link, len))
+		len = -EFAULT;
+
+out:
+	return len;
+}
+
 static int hmfs_readlink(struct dentry *dentry, char __user * buffer, int buflen)
 {
 	struct inode *inode = dentry->d_inode;
@@ -44,10 +59,10 @@ static int hmfs_readlink(struct dentry *dentry, char __user * buffer, int buflen
 	if (IS_ERR(data_blk)) {
 		return -ENODATA;
 	}
-	return vfs_readlink(dentry, buffer, buflen, data_blk);
-
+	// return vfs_readlink(dentry, buffer, buflen, data_blk);
+	return hmfs_readlink_copy(buffer, buflen, data_blk);
 }
-
+/*
 static void *hmfs_follow_link(struct dentry *dentry, struct nameidata *nd)
 {
 	struct inode *inode = dentry->d_inode;
@@ -61,18 +76,18 @@ static void *hmfs_follow_link(struct dentry *dentry, struct nameidata *nd)
 	}
 	nd_set_link(nd, data_blk);
 	return 0;
-}
+}*/
 
 const struct inode_operations hmfs_symlink_inode_operations = {
 	.readlink = hmfs_readlink,
-	.follow_link = hmfs_follow_link,
+	// .follow_link = hmfs_follow_link,
 	.getattr = hmfs_getattr,
 	.setattr = hmfs_setattr,
 	.get_acl = hmfs_get_acl,
 #ifdef CONFIG_HMFS_XATTR
-	.setxattr = generic_setxattr,
-	.getxattr = generic_getxattr,
+	// .setxattr = generic_setxattr,
+	// .getxattr = generic_getxattr,
 	.listxattr = hmfs_listxattr,
-	.removexattr = generic_removexattr,
+	// .removexattr = generic_removexattr,
 #endif 
 };
