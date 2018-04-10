@@ -1,123 +1,13 @@
-make -C /lib/modules/`uname -r`/build M=`pwd` modules
-make[1]: Entering directory '/usr/src/kernels/4.13.9-300.fc27.x86_64'
-  CC [M]  /mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.o
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c: In function ‘__hmfs_xip_file_write’:
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:796:21: error: implicit declaration of function ‘__copy_from_user_nocache’; did you mean ‘_copy_from_iter_nocache’? [-Werror=implicit-function-declaration]
-   written = count - __copy_from_user_nocache((__u8 *)inode_block->inline_content
-                     ^~~~~~~~~~~~~~~~~~~~~~~~
-                     _copy_from_iter_nocache
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c: In function ‘hmfs_file_llseek’:
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:970:21: error: ‘struct inode’ has no member named ‘i_mutex’; did you mean ‘i_mode’?
-  mutex_lock(&inode->i_mutex);
-                     ^~~~~~~
-                     i_mode
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1019:23: error: ‘struct inode’ has no member named ‘i_mutex’; did you mean ‘i_mode’?
-  mutex_unlock(&inode->i_mutex);
-                       ^~~~~~~
-                       i_mode
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c: In function ‘hmfs_xip_file_write’:
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1044:37: error: ‘struct address_space’ has no member named ‘backing_dev_info’
-  current->backing_dev_info = mapping->backing_dev_info;
-                                     ^~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1046:29: error: passing argument 1 of ‘generic_write_checks’ from incompatible pointer type [-Werror=incompatible-pointer-types]
-  ret = generic_write_checks(filp, &pos, &count, S_ISBLK(inode->i_mode));
-                             ^~~~
-In file included from ./include/linux/huge_mm.h:6:0,
-                 from ./include/linux/mm.h:446,
-                 from /mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:13:
-./include/linux/fs.h:2870:16: note: expected ‘struct kiocb *’ but argument is of type ‘struct file *’
- extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
-                ^~~~~~~~~~~~~~~~~~~~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1046:35: error: passing argument 2 of ‘generic_write_checks’ from incompatible pointer type [-Werror=incompatible-pointer-types]
-  ret = generic_write_checks(filp, &pos, &count, S_ISBLK(inode->i_mode));
-                                   ^
-In file included from ./include/linux/huge_mm.h:6:0,
-                 from ./include/linux/mm.h:446,
-                 from /mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:13:
-./include/linux/fs.h:2870:16: note: expected ‘struct iov_iter *’ but argument is of type ‘loff_t * {aka long long int *}’
- extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
-                ^~~~~~~~~~~~~~~~~~~~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1046:8: error: too many arguments to function ‘generic_write_checks’
-  ret = generic_write_checks(filp, &pos, &count, S_ISBLK(inode->i_mode));
-        ^~~~~~~~~~~~~~~~~~~~
-In file included from ./include/linux/huge_mm.h:6:0,
-                 from ./include/linux/mm.h:446,
-                 from /mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:13:
-./include/linux/fs.h:2870:16: note: declared here
- extern ssize_t generic_write_checks(struct kiocb *, struct iov_iter *);
-                ^~~~~~~~~~~~~~~~~~~~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1054:8: error: implicit declaration of function ‘file_remove_suid’; did you mean ‘file_remove_privs’? [-Werror=implicit-function-declaration]
-  ret = file_remove_suid(filp);
-        ^~~~~~~~~~~~~~~~
-        file_remove_privs
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c: In function ‘hmfs_filemap_fault’:
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1482:31: error: ‘PAGE_CACHE_SIZE’ undeclared (first use in this function); did you mean ‘VMACACHE_SIZE’?
-  size = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
-                               ^~~~~~~~~~~~~~~
-                               VMACACHE_SIZE
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1482:31: note: each undeclared identifier is reported only once for each function it appears in
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1482:55: error: ‘PAGE_CACHE_SHIFT’ undeclared (first use in this function); did you mean ‘PAGE_CACHE_SIZE’?
-  size = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
-                                                       ^~~~~~~~~~~~~~~~
-                                                       PAGE_CACHE_SIZE
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1500:47: error: ‘struct vm_fault’ has no member named ‘virtual_address’
-  err = vm_insert_mixed(vma, (unsigned long)vmf->virtual_address, pfn);
-                                               ^~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1500:66: error: incompatible type for argument 3 of ‘vm_insert_mixed’
-  err = vm_insert_mixed(vma, (unsigned long)vmf->virtual_address, pfn);
-                                                                  ^~~
-In file included from /mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:13:0:
-./include/linux/mm.h:2295:5: note: expected ‘pfn_t {aka struct <anonymous>}’ but argument is of type ‘long unsigned int’
- int vm_insert_mixed(struct vm_area_struct *vma, unsigned long addr,
-     ^~~~~~~~~~~~~~~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c: At top level:
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1515:11: error: initialization from incompatible pointer type [-Werror=incompatible-pointer-types]
-  .fault = hmfs_filemap_fault,
-           ^~~~~~~~~~~~~~~~~~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1515:11: note: (near initialization for ‘hmfs_file_vm_ops.fault’)
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c: In function ‘hmfs_ioctl’:
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1626:22: error: ‘struct inode’ has no member named ‘i_mutex’; did you mean ‘i_mode’?
-   mutex_lock(&inode->i_mutex);
-                      ^~~~~~~
-                      i_mode
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1632:26: error: ‘struct inode’ has no member named ‘i_mutex’; did you mean ‘i_mode’?
-     mutex_unlock(&inode->i_mutex);
-                          ^~~~~~~
-                          i_mode
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1641:24: error: ‘struct inode’ has no member named ‘i_mutex’; did you mean ‘i_mode’?
-   mutex_unlock(&inode->i_mutex);
-                        ^~~~~~~
-                        i_mode
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c: At top level:
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1694:13: error: initialization from incompatible pointer type [-Werror=incompatible-pointer-types]
-  .getattr = hmfs_getattr,
-             ^~~~~~~~~~~~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1694:13: note: (near initialization for ‘hmfs_file_inode_operations.getattr’)
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1697:3: error: ‘const struct inode_operations’ has no member named ‘setxattr’; did you mean ‘setattr’?
-  .setxattr = generic_setxattr,
-   ^~~~~~~~
-   setattr
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1697:14: error: ‘generic_setxattr’ undeclared here (not in a function); did you mean ‘generic_listxattr’?
-  .setxattr = generic_setxattr,
-              ^~~~~~~~~~~~~~~~
-              generic_listxattr
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1698:3: error: ‘const struct inode_operations’ has no member named ‘getxattr’; did you mean ‘getattr’?
-  .getxattr = generic_getxattr,
-   ^~~~~~~~
-   getattr
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1698:14: error: ‘generic_getxattr’ undeclared here (not in a function); did you mean ‘generic_setxattr’?
-  .getxattr = generic_getxattr,
-              ^~~~~~~~~~~~~~~~
-              generic_setxattr
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1700:3: error: ‘const struct inode_operations’ has no member named ‘removexattr’
-  .removexattr = generic_removexattr,
-   ^~~~~~~~~~~
-/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.c:1700:17: error: ‘generic_removexattr’ undeclared here (not in a function); did you mean ‘generic_getxattr’?
-  .removexattr = generic_removexattr,
-                 ^~~~~~~~~~~~~~~~~~~
-                 generic_getxattr
-cc1: some warnings being treated as errors
-make[2]: *** [scripts/Makefile.build:303: /mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs/file.o] Error 1
-make[1]: *** [Makefile:1516: _module_/mnt/hgfs/SystemIntegration/HMFS-4.14/fs/hmfs] Error 2
-make[1]: Leaving directory '/usr/src/kernels/4.13.9-300.fc27.x86_64'
-make: *** [Makefile:16: all] Error 2
+# Notes for mounting HMFS-4.14
+
+Hello, everyone. I have successfully compile hmfs.ko and installed it on my machine.
+
+I try to mount it on a self-created dir /tmp/test and there is some error info.
+
+I recorded them to share with you.
+
+*1. The first one is the signature issue: I added 'MODULES_CONFIG_SIG=n' in the first line of Makefile, since it really worked in AEP machine;
+
+*2. The second is memory registering: i fail to reserve a memory region for hmfs by modifying grub.cfg. Better first see the usable memory via 'dmesg | grep e820' and then add 'memmap=AG(M)\$BG(M)' to reserve AG(M) memory space from start address BG(M).
+
+
