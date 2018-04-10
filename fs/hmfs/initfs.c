@@ -672,7 +672,7 @@ free_cp_mgr:
 
 static int obtain_init_mm_addr(struct hmfs_sb_info *sbi)
 {
-    const char name[20] = "init_mm";
+    const char name[20] = "init_mm_test";
     unsigned long long addr;
     int ret=0;
     loff_t pos=0;
@@ -686,7 +686,8 @@ static int obtain_init_mm_addr(struct hmfs_sb_info *sbi)
     filp = filp_open("/proc/kallsyms", O_RDONLY, 0);
     while (ret>=0) {
         for (j=0;j<100;++j) {
-            ret = vfs_read(filp, &buffer[j], 1, &pos);
+            // ret = vfs_read(filp, &buffer[j], 1, &pos);
+            ret = kernel_read(filp, &buffer[j], 1, &pos);
             if (buffer[j]==' ') {p1=j;}
             if (buffer[j]=='\n') {p2=j;buffer[j]='\0';break;}
         }
