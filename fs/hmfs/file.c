@@ -1702,8 +1702,8 @@ const struct file_operations hmfs_file_operations = {
 const struct inode_operations hmfs_file_inode_operations = {
 	.getattr = hmfs_getattr,
 	.setattr = hmfs_setattr,
-	.get_acl = hmfs_get_acl,
-	.set_acl = hmfs_set_acl,
+	// .get_acl = hmfs_get_acl,
+	// .set_acl = hmfs_set_acl,
 #ifdef CONFIG_HMFS_XATTR
 	//.setxattr = generic_setxattr,
 	//.getxattr = generic_getxattr,

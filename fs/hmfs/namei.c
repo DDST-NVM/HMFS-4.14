@@ -482,7 +482,7 @@ const struct inode_operations hmfs_dir_inode_operations = {
 	.setattr = hmfs_setattr,
 	.rmdir = hmfs_rmdir,
 	.rename = hmfs_rename,
-	.get_acl = hmfs_get_acl,
+	// .get_acl = hmfs_get_acl,
 #ifdef CONFIG_HMFS_XATTR
 	//.setxattr = generic_setxattr,
 	//.getxattr = generic_getxattr,
@@ -494,7 +494,7 @@ const struct inode_operations hmfs_dir_inode_operations = {
 const struct inode_operations hmfs_special_inode_operations = {
 	.getattr = hmfs_getattr,
 	.setattr = hmfs_setattr,
-	.get_acl = hmfs_get_acl,
+	// .get_acl = hmfs_get_acl,
 #ifdef CONFIG_HMFS_XATTR
 	//.setxattr = generic_setxattr,
 	//.getxattr = generic_getxattr,

@@ -10,7 +10,7 @@
 #ifndef current
 #include <linux/thread_info.h>
 #define current get_current()
-#include <linux/sched.h>
+// #include <linux/sched.h>
 #endif
 
 struct node_info *hmfs_get_node_info(struct inode *inode, int64_t index) {

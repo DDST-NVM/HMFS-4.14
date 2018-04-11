@@ -681,12 +681,12 @@ static int obtain_init_mm_addr(struct hmfs_sb_info *sbi)
     int j;
     int p1=0;
     int p2=0;
-    set_fs(get_ds());
+    // set_fs(get_ds());
     buffer = (char*)kmalloc(sizeof(char)*100,GFP_KERNEL);
     filp = filp_open("/proc/kallsyms", O_RDONLY, 0);
     while (ret>=0) {
         for (j=0;j<100;++j) {
-            ret = vfs_read(filp, &buffer[j], 1, &pos);
+            ret = kernel_read(filp, &buffer[j], 1, &pos);
             if (buffer[j]==' ') {p1=j;}
             if (buffer[j]=='\n') {p2=j;buffer[j]='\0';break;}
         }
@@ -752,7 +752,6 @@ int hmfs_fill_super(struct super_block *sb, void *data, int slient)
 		if (retval)
 			goto out;
 	}
-
 
 	return 0;
 out:
