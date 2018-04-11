@@ -6,12 +6,7 @@
 #include "hmfs_fs.h"
 #include "node.h"
 #include "segment.h"
-
-#ifndef current
-#include <linux/thread_info.h>
-#define current get_current()
-// #include <linux/sched.h>
-#endif
+#include <linux/sched.h>
 
 struct node_info *hmfs_get_node_info(struct inode *inode, int64_t index) {
 	struct db_info di;

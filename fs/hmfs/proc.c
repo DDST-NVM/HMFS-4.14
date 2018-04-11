@@ -67,29 +67,30 @@ uint64_t getPpath(struct task_struct *cur_task){
 	int len = 0;
 	uint64_t p_hash=0;
 	
-
 	read_buf = kmalloc(PAGE_SIZE,GFP_KERNEL);
 	if(!read_buf){
-	 	printk("read_buf alloc error!\n");
+	 	// printk("read_buf alloc error!\n");
 		goto error1;
 	}
 	path = kmalloc(PAGE_SIZE,GFP_KERNEL);
 	if(!path){
-		printk("path alloc error!\n");
+		// printk("path alloc error!\n");
 		goto error2;
 	}
 
 	if(cur_task && cur_task->mm && cur_task->mm->exe_file){
-		ptr = d_path(&cur_task->mm->exe_file->f_path,path,PAGE_SIZE);        
+		ptr = d_path(&cur_task->mm->exe_file->f_path,path,PAGE_SIZE);
+		// printk(KERN_ALERT "task not null!\n");	
 	}
 	else{
-		printk("task is null!\n");
+		// printk(KERN_ALERT "task is null!\n");
+		goto error1;
 	}
 
 	len = strlen(ptr);
      	p_hash = proc_hash(ptr, len);
-    	printk("ProcName:%s PID: %d\n",cur_task->comm, cur_task->pid);
-    	printk("ProcPath:%s", ptr);
+    	// printk("ProcName:%s PID: %d\n",cur_task->comm, cur_task->pid);
+    	// printk("ProcPath:%s", ptr);
 error1:
     	kfree(read_buf);
 error2:
@@ -130,10 +131,10 @@ int set_proc_info(uint64_t proc_id, struct inode *inode, loff_t *ppos){
 	*/
    	//new_proc = kmem_cache_alloc(proc_info_slab,GFP_KERNEL);
 	new_proc = (struct hmfs_proc_info *)kzalloc(sizeof(struct hmfs_proc_info), GFP_KERNEL);
-	printk("get in setpproc function\n");
+	// printk("get in setpproc function\n");
 	
    	if(!new_proc){
-		printk("kazalloc erro");
+		// printk("kazalloc erro");
 		return -ENOMEM;
    	}
 	new_proc->proc_id = proc_id;
@@ -144,7 +145,7 @@ int set_proc_info(uint64_t proc_id, struct inode *inode, loff_t *ppos){
 	else
 		nid = set_proc_nid(inode, index);
   	new_proc->next_nid =nid;
-	printk("proc_ino: %lu proc_nid: %lu\n", (unsigned long) new_proc->next_ino, (unsigned long) new_proc->next_nid);
+	// printk("proc_ino: %lu proc_nid: %lu\n", (unsigned long) new_proc->next_ino, (unsigned long) new_proc->next_nid);
 	ret = update_proc_info(inode, new_proc);
 	/*if(ret)
 		kmem_cache_free(proc_info_slab, new_proc);*/
@@ -260,11 +261,11 @@ static int update_proc_info(struct inode *inode, struct hmfs_proc_info *proc){
 	int ret = 0, i = 0;
 	int ret_tag = 0;
 
-	printk("get into update proc\n");	
+	// printk("get into update proc\n");	
 	//get last_visited inode if proc exists
 	last_visit_ino = radix_tree_lookup(&nm_i->p_pid_root, proc_id);
 	if(!last_visit_ino){
-		printk("get in tree insert");
+		// printk("get in tree insert");
 		radix_tree_insert(&nm_i->p_pid_root, proc_id, inode);
 		goto end;
 	}
@@ -273,17 +274,17 @@ static int update_proc_info(struct inode *inode, struct hmfs_proc_info *proc){
 		radix_tree_insert(&nm_i->p_pid_root, proc_id, inode);
 	}	
 	lfi = HMFS_I(last_visit_ino);
-	hmfs_dbg("Insert proc id:%llu ino:%lu last:%lu\n",(unsigned long long)proc_id,inode->i_ino,last_visit_ino->i_ino);
+	// hmfs_dbg("Insert proc id:%llu ino:%lu last:%lu\n",(unsigned long long)proc_id,inode->i_ino,last_visit_ino->i_ino);
 
 	//generally it is impossible to find last_ino not in the tree 
 	// zsa: It is actually possible, though. Otherwise, how to initialize?
 	cur_proc= radix_tree_lookup(&nm_i->p_ino_root, last_visit_ino->i_ino);
 	if(!cur_proc){
-		printk("get into ino tree insert\n");
+		// printk("get into ino tree insert\n");
 		radix_tree_insert(&nm_i->p_ino_root, last_visit_ino->i_ino,lfi->i_proc_info);
 		cur_proc= lfi->i_proc_info;
 		radix_tree_insert(&nm_i->p_ino_root, inode->i_ino,fi->i_proc_info);
-		printk("the first proc info is: %llu\n", fi->i_proc_info[0].proc_id);
+		// printk("the first proc info is: %llu\n", fi->i_proc_info[0].proc_id);
 		// goto end;
 	}
 	pproc=cur_proc;
@@ -293,12 +294,12 @@ static int update_proc_info(struct inode *inode, struct hmfs_proc_info *proc){
 			//cur_proc->next_ino=proc->next_ino;
 			//cur_proc->next_nid=proc->next_nid;
 			//break;
-			printk("proc_id=0\n");
+			// printk("proc_id=0\n");
 			continue;
 		}
 		if(cur_proc->proc_id==proc->proc_id&&cur_proc->next_ino==proc->next_ino&&
 			cur_proc->next_nid==proc->next_nid){
-			printk("Found the right proc_info\n");
+			// printk("Found the right proc_info\n");
 			ret=1;
 			goto end;
 		}
@@ -309,7 +310,7 @@ static int update_proc_info(struct inode *inode, struct hmfs_proc_info *proc){
 			pproc->next_ino=proc->next_ino;
 			pproc->next_nid=proc->next_nid;
 			//fi->i_proc_info[i]= pproc;
-			printk("get dirty value\n");
+			// printk("get dirty value\n");
 			break;
 		}
 	}
@@ -324,10 +325,10 @@ static int update_proc_info(struct inode *inode, struct hmfs_proc_info *proc){
 	pproc->next_nid=0;
 	//fi->i_proc_info[i]= pproc;
 	//set dirty tags
-	printk("set tag\n");
+	// printk("set tag\n");
 	radix_tree_tag_set(&nm_i->p_ino_root,last_visit_ino->i_ino,1);
 	ret_tag= radix_tree_tag_get(&nm_i->p_ino_root, last_visit_ino->i_ino,1);
-	printk("ret_tag in update is %d\n",ret_tag);
+	// printk("ret_tag in update is %d\n",ret_tag);
 end:
 	return ret;
 	
