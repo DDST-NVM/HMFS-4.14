@@ -1,0 +1,1 @@
+cmd_/home/kaixin/codes/HMFS-4.14/fs/hmfs/hmfs.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/kaixin/codes/HMFS-4.14/fs/hmfs/hmfs.ko /home/kaixin/codes/HMFS-4.14/fs/hmfs/hmfs.o /home/kaixin/codes/HMFS-4.14/fs/hmfs/hmfs.mod.o ;  true
