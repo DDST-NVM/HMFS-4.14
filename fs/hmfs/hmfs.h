@@ -40,6 +40,7 @@
 #define HMFS_MOUNT_XATTR_USER		0x00000002
 #define HMFS_MOUNT_POSIX_ACL		0x00000004
 #define HMFS_MOUNT_INLINE_DATA		0x00000008
+#define HMFS_MOUNT_INIT			0X00000010
 
 #define clear_opt(sbi, option)	(sbi->s_mount_opt &= ~HMFS_MOUNT_##option)
 #define set_opt(sbi, option)	(sbi->s_mount_opt |= HMFS_MOUNT_##option)
@@ -237,6 +238,7 @@ struct hmfs_cm_info {
 struct hmfs_sb_info {
 	struct super_block *sb;	/* pointer to VFS super block */
 
+	struct block_device * s_bdev;
 	phys_addr_t phys_addr;	/* physical address of NVM */
 	void *virt_addr;	/* hmfs_superblock & also HMFS address */
 

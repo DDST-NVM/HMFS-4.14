@@ -173,9 +173,9 @@ static void hmfs_put_super(struct super_block *sb)
 	sb->s_fs_info = NULL;
 	kfree(sbi);
 
-	if (sbi->virt_addr) {
-		hmfs_iounmap(sbi->virt_addr);
-	}
+	// if (sbi->virt_addr) {
+	// 	hmfs_iounmap(sbi->virt_addr);
+	// }
 	hmfs_dbg("[HMFS] : put super block done!\n");
 }
 
@@ -249,14 +249,16 @@ struct super_operations hmfs_sops = {
 struct dentry *hmfs_mount(struct file_system_type *fs_type, int flags,
 			  const char *dev_name, void *data)
 {
-	return mount_nodev(fs_type, flags, data, hmfs_fill_super);
+	// return mount_nodev(fs_type, flags, data, hmfs_fill_super);
+	return mount_bdev(fs_type, flags, dev_name, data, hmfs_fill_super);
 }
 
 struct file_system_type hmfs_fs_type = {
 	.owner = THIS_MODULE,
 	.name = "hmfs",
 	.mount = hmfs_mount,
-	.kill_sb = kill_anon_super,
+	// .kill_sb = kill_anon_super,
+	.kill_sb = kill_block_super,
 };
 
 #define AUTHOR_INFO "RADLAB SJTU"

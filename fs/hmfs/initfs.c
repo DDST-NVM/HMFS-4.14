@@ -4,6 +4,9 @@
 #include <linux/string.h>
 #include <linux/crc16.h>
 #include <linux/ctype.h>
+#include <linux/io.h>
+#include <linux/dax.h>
+#include <linux/backing-dev.h>
 
 #include "hmfs_fs.h"
 #include "hmfs.h"
@@ -262,8 +265,9 @@ static inline int hmfs_mkfs(struct hmfs_sb_info *sbi)
  * For mount
  */
 enum {
-	Opt_addr = 0,
-	Opt_size,
+	// Opt_addr = 0,
+	// Opt_size,
+	Opt_init = 0,
 	Opt_num_inodes,
 	Opt_mode,
 	Opt_uid,
@@ -281,8 +285,9 @@ enum {
 };
 
 static const match_table_t tokens = {
-	{Opt_addr, "physaddr=%x"},
-	{Opt_size, "init=%s"},
+	// {Opt_addr, "physaddr=%x"},
+	// {Opt_size, "init=%s"},
+	{Opt_init, "init"},
 	{Opt_num_inodes, "num_inodes=%u"},
 	{Opt_mode, "mode=%o"},
 	{Opt_uid, "uid=%u"},
@@ -307,10 +312,11 @@ static const match_table_t tokens = {
  */
 static int hmfs_parse_options(char *options, struct hmfs_sb_info *sbi, bool remount)
 {
-	char *p, *rest;
+	char *p;
+	//, *rest;
 	int token;
 	substring_t args[MAX_OPT_ARGS];
-	phys_addr_t phys_addr = 0;
+	// phys_addr_t phys_addr = 0;
 	int option;
 	bool check_gc_time = false;
 
@@ -327,6 +333,7 @@ static int hmfs_parse_options(char *options, struct hmfs_sb_info *sbi, bool remo
 		token = match_token(p, tokens, args);
 
 		switch (token) {
+		/*
 		case Opt_addr:
 			if (remount)
 				goto bad_val;
@@ -343,12 +350,17 @@ static int hmfs_parse_options(char *options, struct hmfs_sb_info *sbi, bool remo
 		case Opt_size:
 			if (remount)
 				goto bad_val;
-			/* change size isn't allowed */
-			/* memparse() accepts a K/M/G without a digit */
+			// change size isn't allowed
+			// memparse() accepts a K/M/G without a digit
 			if (!isdigit(*args[0].from))
 				goto bad_val;
 			sbi->initsize = memparse(args[0].from, &rest);
 			break;
+			*/
+		case Opt_init:
+			if (remount)
+				goto bad_val;
+			set_opt(sbi, INIT);
 		case Opt_uid:
 			if (remount)
 				goto bad_val;
@@ -518,18 +530,62 @@ static struct hmfs_super_block *get_valid_super_block(void *start_addr)
 	return NULL;
 }
 
-static struct hmfs_super_block *mount_super_block(struct hmfs_sb_info *sbi)
+static int hmfs_get_block_info(struct super_block *sb, struct hmfs_sb_info *sbi) {
+	struct dax_device *dax_dev;
+	void *virt_addr = NULL;
+	pfn_t __pfn_t;
+	long size;
+	int ret;
+
+	ret = bdev_dax_supported(sb, PAGE_SIZE);
+	if (ret) {
+		printk(KERN_ALERT "device does not support DAX\n");
+		return -EINVAL;
+	}
+
+	sbi->s_bdev = sb->s_bdev;
+	dax_dev = fs_dax_get_by_host(sb->s_bdev->bd_disk->disk_name);
+	if (!dax_dev) {
+		printk(KERN_ALERT "Couldn't retrieve DAX device\n");
+		return -EINVAL;
+	}
+
+	size = dax_direct_access(dax_dev, 0, LONG_MAX / PAGE_SIZE, 
+				&virt_addr, &__pfn_t) * PAGE_SIZE;
+	if (size <= 0) {
+		printk(KERN_ALERT "direct_access failed\n");
+		return -EINVAL;
+	}
+
+	sbi->virt_addr = virt_addr;
+	sbi->phys_addr = pfn_t_to_pfn(__pfn_t) << PAGE_SHIFT;
+	sbi->initsize = size;
+
+	return 0;
+}
+
+static struct hmfs_super_block *mount_super_block(struct super_block *sb, struct hmfs_sb_info *sbi)
 {
-	uint64_t input_size = sbi->initsize;
+	// uint64_t input_size = sbi->initsize;
 	struct hmfs_super_block *super;
 
-	if (!input_size)
-		sbi->initsize = HMFS_MIN_PAGE_SIZE * 2;
+	// if (!input_size)
+	//	sbi->initsize = HMFS_MIN_PAGE_SIZE * 2;
 
-	sbi->virt_addr = hmfs_ioremap(sbi->phys_addr, sbi->initsize);
-	if (!sbi->virt_addr)
+	// sbi->virt_addr = hmfs_ioremap(sbi->phys_addr, sbi->initsize);
+	// if (!sbi->virt_addr)
+	//	return ERR_PTR(-EINVAL);
+	if (hmfs_get_block_info(sb, sbi))
 		return ERR_PTR(-EINVAL);
-
+	
+	if (test_opt(sbi, INIT)) {
+		hmfs_mkfs(sbi);
+	}
+	super = get_valid_super_block(sbi->virt_addr);
+	if (super == NULL && sbi->mnt_cp_version)
+		if (!hmfs_readonly(sbi->sb))
+			return ERR_PTR(-EACCES);
+	/*
 	super = get_valid_super_block(sbi->virt_addr);
 	if (!input_size && super != NULL) {
 		sbi->initsize = le64_to_cpu(super->init_size);
@@ -546,6 +602,7 @@ static struct hmfs_super_block *mount_super_block(struct hmfs_sb_info *sbi)
 		return ERR_PTR(-EINVAL);
 
 	super = get_valid_super_block(sbi->virt_addr);
+	*/
 	return !super ? ERR_PTR(-EINVAL) : super;
 }
 
@@ -730,7 +787,7 @@ int hmfs_fill_super(struct super_block *sb, void *data, int slient)
 		goto out;
 	}
 
-	super = mount_super_block(sbi);
+	super = mount_super_block(sb, sbi);
 	if (IS_ERR(super)) {
 		retval = PTR_ERR(super);
 		goto out;
@@ -755,8 +812,8 @@ int hmfs_fill_super(struct super_block *sb, void *data, int slient)
 
 	return 0;
 out:
-	if (sbi->virt_addr)
-		hmfs_iounmap(sbi->virt_addr);
+	// if (sbi->virt_addr)
+	//	hmfs_iounmap(sbi->virt_addr);
 	kfree(sbi);
 	return retval;
 }
