@@ -361,6 +361,7 @@ static int hmfs_parse_options(char *options, struct hmfs_sb_info *sbi, bool remo
 			if (remount)
 				goto bad_val;
 			set_opt(sbi, INIT);
+			break;
 		case Opt_uid:
 			if (remount)
 				goto bad_val;
@@ -447,7 +448,8 @@ static int hmfs_parse_options(char *options, struct hmfs_sb_info *sbi, bool remo
 	}
 	
 	/* format fs and mount cp in the same time is invalid */
-	if (sbi->initsize && sbi->mnt_cp_version)
+	// if (sbi->initsize && sbi->mnt_cp_version)
+	if (test_opt(sbi, INIT) && sbi->mnt_cp_version)
 		goto bad_val;
 
 	if (check_gc_time) {
@@ -496,6 +498,17 @@ inline void destroy_map_zero_page(struct hmfs_sb_info *sbi)
 	__free_page(sbi->map_zero_page);
 	sbi->map_zero_page = NULL;
 	sbi->map_zero_page_number = 0;
+}
+
+inline void printksb(struct hmfs_super_block * super) 
+{
+	int i;
+	char * start = (char *) super;
+	printk("========= START");
+	for (i=0; i<sizeof(struct hmfs_super_block); i++)
+
+		printk("%c", start[i]);
+	printk("========= END");
 }
 
 static struct hmfs_super_block *get_valid_super_block(void *start_addr)
@@ -577,7 +590,7 @@ static struct hmfs_super_block *mount_super_block(struct super_block *sb, struct
 	//	return ERR_PTR(-EINVAL);
 	if (hmfs_get_block_info(sb, sbi))
 		return ERR_PTR(-EINVAL);
-	
+	/*
 	if (test_opt(sbi, INIT)) {
 		hmfs_mkfs(sbi);
 	}
@@ -585,24 +598,24 @@ static struct hmfs_super_block *mount_super_block(struct super_block *sb, struct
 	if (super == NULL && sbi->mnt_cp_version)
 		if (!hmfs_readonly(sbi->sb))
 			return ERR_PTR(-EACCES);
-	/*
+			*/
 	super = get_valid_super_block(sbi->virt_addr);
-	if (!input_size && super != NULL) {
-		sbi->initsize = le64_to_cpu(super->init_size);
-		hmfs_iounmap(sbi->virt_addr);
-		sbi->virt_addr = hmfs_ioremap(sbi->phys_addr, sbi->initsize);
+	// if (!input_size && super != NULL) {
+	if (!test_opt(sbi, INIT) && super != NULL) {
+		// sbi->initsize = le64_to_cpu(super->init_size);
+		// hmfs_iounmap(sbi->virt_addr);
+		// sbi->virt_addr = hmfs_ioremap(sbi->phys_addr, sbi->initsize);
 		if (!sbi->virt_addr)
 			return ERR_PTR(-EINVAL);
-	} else if (input_size) {
+	} else if (test_opt(sbi, INIT)) {
 		hmfs_mkfs(sbi);
 	} else if (sbi->mnt_cp_version) {
 		if (!hmfs_readonly(sbi->sb))
 			return ERR_PTR(-EACCES);
 	} else
 		return ERR_PTR(-EINVAL);
-
 	super = get_valid_super_block(sbi->virt_addr);
-	*/
+	
 	return !super ? ERR_PTR(-EINVAL) : super;
 }
 
